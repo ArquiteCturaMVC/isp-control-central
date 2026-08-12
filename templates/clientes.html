@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ revendedor.nombre_comercial }} - Panel Control ISP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #121212 !important; color: #e0e0e0; }
+        .card { background-color: #1e1e1e; border-color: #2c2c2c; }
+        .table { color: #e0e0e0; }
+        .modal-content { background-color: #1e1e1e; color: #e0e0e0; border-color: #2c2c2c; }
+        .alerta-senal { color: #ff4d4d; font-weight: bold; }
+        .alerta-vencimiento { background-color: #58151c !important; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4 mb-5">
+        <!-- Barra superior -->
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary">
+            <h2 class="text-info"><i class="fas fa-network-wired"></i> {{ revendedor.nombre_comercial }}</h2>
+            <div>
+                <!-- Botón de Sincronizar MikroTik agregado aquí -->
+                <a href="/sincronizar_mikrotik" class="btn btn-outline-info btn-sm me-2">
+                    <i class="fas fa-sync-alt"></i> Sincronizar MikroTik
+                </a>
+                <button class="btn btn-outline-warning btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalMikrotik">
+                    <i class="fas fa-cog"></i> Configuración
+                </button>
+                <button class="btn btn-outline-success btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalPlan">
+                    <i class="fas fa-tags"></i> Gestionar Planes
+                </button>
+                <button class="btn btn-outline-secondary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalPassword">
+                    <i class="fas fa-key"></i> Cambiar Contraseña
+                </button>
+                <a href="/logout" class="btn btn-outline-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
+            </div>
+        </div>
+
+        <!-- Tarjetas financieras -->
+        <div class="row text-center mb-4">
+            <div class="col-md-4">
+                <div class="card p-3 shadow-sm border-success">
+                    <h6 class="text-muted">Total Cobrado (Mes)</h6>
+                    <h3 class="text-success">${{ total_cobrado }}</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-3 shadow-sm border-danger">
+                    <h6 class="text-muted">Total Gastos</h6>
+                    <h3 class="text-danger">${{ total_gastos }}</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-3 shadow-sm border-info">
+                    <h6 class="text-muted">Balance Neto</h6>
+                    <h3 class="text-info">${{ balance_neto }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acciones Principales y Buscador -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <form action="/panel" method="GET" class="d-flex gap-2 w-50">
+                <input type="text" name="q" class="form-control bg-dark text-light border-secondary form-control-sm" placeholder="Buscar por nombre, DNI o zona..." value="{{ busqueda }}">
+                <button type="submit" class="btn btn-outline-info btn-sm"><i class="fas fa-search"></i> Buscar</button>
+                {% if busqueda %}
+                <a href="/panel" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+                {% endif %}
+            </form>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCliente">
+                    <i class="fas fa-user-plus"></i> Nuevo Cliente
+                </button>
+                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modalGasto">
+                    <i class="fas fa-minus-circle"></i> Registrar Gasto
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de Clientes -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-light">
+                <h5 class="m-0"><i class="fas fa-users"></i> Mis Clientes Conectados</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Usuario / Conexión</th>
+                                <th>Plan / Precio</th>
+                                <th>Vencimiento</th>
+                                <th>Estado Pago</th>
+                                <th>Estado / Señal / Tráfico</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in clientes %}
+                            <tr class="{% if c.alerta_vencimiento %}alerta-vencimiento{% endif %}">
+                                <td>
+                                    <strong>{{ c.nombre }} {{ c.apellido }}</strong><br>
+                                    <small class="text-muted"><i class="fas fa-phone"></i> {{ c.telefono }}</small><br>
+                                    <small class="text-info"><i class="fas fa-map-marker-alt"></i> {{ c.zona or 'Sin zona' }} - {{ c.direccion or 'Sin dirección' }}</small>
+                                </td>
+                                <td><code>{{ c.usuario_pppoe }}</code></td>
+                                <td>{{ c.plan }}<br><strong>${{ c.precio }}</strong></td>
+                                <td>{{ c.vencimiento }} {% if c.alerta_vencimiento %}<span class="badge bg-danger ms-1">¡Vence pronto!</span>{% endif %}</td>
+                                <td>
+                                    <span class="badge {% if 'Pagado' in c.estado_pago %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                        {{ c.estado_pago }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if c.estado_conexion == 'Online' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ c.estado_conexion }}
+                                    </span><br>
+                                    <small class="{% if c.potencia_senal and c.potencia_senal != 'N/A' and c.potencia_senal != 'Conectado' %}alerta-senal{% else %}text-info{% endif %}">
+                                        <i class="fas fa-signal"></i> {{ c.potencia_senal or 'N/D' }}
+                                    </small><br>
+                                    <small class="text-warning"><i class="fas fa-database"></i> {{ c.consumo_datos or '0 MB' }}</small>
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        {% if 'Pagado' not in c.estado_pago %}
+                                        <a href="/registrar_pago/{{ c.id }}" class="btn btn-sm btn-success" title="Registrar Pago">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if c.telefono %}
+                                        <a href="https://wa.me/{{ c.telefono }}?text=Hola%20{{ c.nombre }},%20te%20escribimos%20de%20{{ revendedor.nombre_comercial | urlencode }}%20para%20recordarte%20tu%20vencimiento.%20Importe:%20${{ c.precio }}" 
+                                           target="_blank" class="btn btn-sm btn-outline-success" title="Enviar WhatsApp">
+                                            <i class="fab fa-whatsapp"></i>
+                                        </a>
+                                        {% endif %}
+                                        <a href="/editar_cliente/{{ c.id }}" class="btn btn-sm btn-outline-primary" title="Editar Cliente">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="/cortar_servicio/{{ c.id }}" class="btn btn-sm btn-outline-danger" title="Cortar / Suspender Servicio">
+                                            <i class="fas fa-ban"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">No tenés clientes cargados todavía.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Configuración -->
+    <div class="modal fade" id="modalMikrotik" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="/guardar_configuracion" method="POST">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title"><i class="fas fa-cog"></i> Configuración General y MikroTik</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Nombre de tu Marca / Empresa</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="nombre_comercial" value="{{ revendedor.nombre_comercial or '' }}" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">IP del MikroTik</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="mikrotik_ip" value="{{ revendedor.mikrotik_ip or '' }}" placeholder="Ej: 192.168.88.1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Usuario MikroTik</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="mikrotik_user" value="{{ revendedor.mikrotik_user or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contraseña MikroTik</label>
+                            <input type="password" class="form-control bg-dark text-light border-secondary" name="mikrotik_pass" value="{{ revendedor.mikrotik_pass or '' }}">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gestionar Planes -->
+    <div class="modal fade" id="modalPlan" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="/agregar_plan" method="POST">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="fas fa-tags"></i> Crear Nuevo Plan</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label">Nombre del Plan</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="nombre" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Precio ($)</label>
+                            <input type="number" step="0.01" class="form-control bg-dark text-light border-secondary" name="precio" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-success">Guardar Plan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cambiar Contraseña -->
+    <div class="modal fade" id="modalPassword" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="/cambiar_password" method="POST">
+                    <div class="modal-header bg-secondary text-white">
+                        <h5 class="modal-title"><i class="fas fa-key"></i> Cambiar mi Contraseña</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Nueva Contraseña</label>
+                            <input type="password" class="form-control bg-dark text-light border-secondary" name="nueva_password" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Actualizar Clave</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Cliente -->
+    <div class="modal fade" id="modalCliente" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form action="/agregar_cliente" method="POST">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i class="fas fa-user-plus"></i> Registrar Nuevo Cliente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="nombre" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Apellido</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="apellido" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">DNI</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="dni">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="telefono" placeholder="Ej: 5491122334455">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Zona / Barrio</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="zona" placeholder="Ej: Centro...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Dirección / Calle y Altura</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="direccion" placeholder="Ej: Av. San Martín 1234">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Usuario PPPoE</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="usuario_pppoe" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contraseña PPPoE</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="password_pppoe" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Plan</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="plan" placeholder="Ej: 100 Megas" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Precio ($)</label>
+                            <input type="number" step="0.01" class="form-control bg-dark text-light border-secondary" name="precio" placeholder="Ej: 30000" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Fecha de Vencimiento</label>
+                            <input type="date" class="form-control bg-dark text-light border-secondary" name="vencimiento" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cliente</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Gasto -->
+    <div class="modal fade" id="modalGasto" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="/agregar_gasto" method="POST">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title"><i class="fas fa-minus-circle"></i> Registrar Gasto</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="descripcion" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Monto ($)</label>
+                            <input type="number" step="0.01" class="form-control bg-dark text-light border-secondary" name="monto" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Guardar Gasto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
