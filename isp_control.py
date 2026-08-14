@@ -131,11 +131,14 @@ def login():
                 error = "Tu cuenta se encuentra suspendida por falta de pago."
             else:
                 session['usuario_id'] = user.id
-                return redirect(url_for('panel'))
+                # ESTA ES LA CLAVE: Forzamos la entrada al super admin si sos el administrador
+                if user.username == 'gestionadmin':
+                    return redirect(url_for('super_admin'))
+                else:
+                    return redirect(url_for('panel'))
         else:
             error = "Usuario o contraseña incorrectos."
     return render_template('login.html', error=error)
-
 @app.route('/panel')
 def panel():
     if 'usuario_id' not in session: return redirect(url_for('login'))
@@ -338,6 +341,8 @@ def guardar_configuracion():
 
 @app.route('/super-admin')
 def super_admin():
+    if 'usuario_id' not in session:
+         return redirect(url_for('login'))
     revendedores = Revendedor.query.all()
     return render_template('super_admin.html', revendedores=revendedores)
 
