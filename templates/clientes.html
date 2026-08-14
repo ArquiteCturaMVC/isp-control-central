@@ -6,148 +6,176 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #121212 !important; color: #e0e0e0; }
-        .card { background-color: #1e1e1e; border-color: #2c2c2c; }
-        .table { color: #e0e0e0; }
-        .modal-content { background-color: #1e1e1e; color: #e0e0e0; border-color: #2c2c2c; }
-        .alerta-senal { color: #ff4d4d; font-weight: bold; }
-        .alerta-vencimiento { background-color: #58151c !important; }
+        body { background-color: #0d0f12 !important; color: #e4e6eb; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        .card { background: linear-gradient(145deg, #181b20, #131519); border: 1px solid #262a33; border-radius: 12px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); }
+        .btn { border-radius: 8px; font-weight: 600; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); }
+        .modal-content { background-color: #181b20; color: #e4e6eb; border: 1px solid #2f3441; border-radius: 12px; }
+        .alerta-senal { color: #ff5252; font-weight: bold; }
+        .alerta-vencimiento { background-color: rgba(88, 21, 28, 0.4) !important; }
     </style>
 </head>
+<style>
+  /* --- Tarjetas 3D con Profundidad y Bisel --- */
+  .card-3d {
+    background: linear-gradient(145deg, #1e2638 0%, #111827 100%) !important;
+    border-radius: 20px !important;
+    border: none !important;
+    padding: 22px !important;
+    /* Sombras en capas para dar efecto 3D flotante */
+    box-shadow: 
+      0 12px 28px -5px rgba(0, 0, 0, 0.55),
+      0 8px 10px -6px rgba(0, 0, 0, 0.3),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.18) !important; /* Brillo de luz superior */
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    position: relative;
+  }
+
+  /* Efecto al pasar el mouse (se eleva aún más) */
+  .card-3d:hover {
+    transform: translateY(-6px) scale(1.01) !important;
+    box-shadow: 
+      0 20px 40px -10px rgba(0, 0, 0, 0.7),
+      0 12px 15px -5px rgba(0, 0, 0, 0.4),
+      inset 0 1px 2px 0 rgba(255, 255, 255, 0.3) !important;
+  }
+
+  /* Brillo / Glow sutil de color según la métrica */
+  .card-3d-cobrado {
+    box-shadow: 0 12px 28px -5px rgba(16, 185, 129, 0.15), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2) !important;
+  }
+  .card-3d-gastos {
+    box-shadow: 0 12px 28px -5px rgba(239, 68, 68, 0.15), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2) !important;
+  }
+  .card-3d-balance {
+    box-shadow: 0 12px 28px -5px rgba(59, 130, 246, 0.15), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2) !important;
+  }
+</style>
 <body>
     <div class="container mt-4 mb-5">
-        <!-- Barra superior -->
-        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary">
-            <h2 class="text-info"><i class="fas fa-network-wired"></i> {{ revendedor.nombre_comercial }}</h2>
-            <div>
-        <a href="/super-admin" class="btn btn-outline-primary btn-sm me-2">
-        <i class="fas fa-users-cog"></i> Panel Super Admin </a> 
-                <a href="/sincronizar_mikrotik" class="btn btn-outline-info btn-sm me-2">
-                    <i class="fas fa-sync-alt"></i> Sincronizar MikroTik
-                </a>
-                <button class="btn btn-outline-warning btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalMikrotik">
-                    <i class="fas fa-cog"></i> Configuración
-                </button>
-                <button class="btn btn-outline-success btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalPlan">
-                    <i class="fas fa-tags"></i> Gestionar Planes
-                </button>
-                <button class="btn btn-outline-secondary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalPassword">
-                    <i class="fas fa-key"></i> Cambiar Contraseña
-                </button>
+        <!-- Barra Superior -->
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+            <h2 class="text-info fw-bold"><i class="fas fa-network-wired me-2"></i>{{ revendedor.nombre_comercial }}</h2>
+            <div class="d-flex gap-2 align-items-center">
+                <a href="/panel" class="btn btn-outline-light btn-sm"><i class="fas fa-home"></i> Inicio</a>
+                <a href="/sincronizar_mikrotik" class="btn btn-outline-info btn-sm"><i class="fas fa-sync-alt"></i> Sincronizar MikroTik</a>
+                <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalMikrotik"><i class="fas fa-cog"></i> MikroTik</button>
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalPassword"><i class="fas fa-key"></i> Clave</button>
                 <a href="/logout" class="btn btn-outline-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Salir</a>
             </div>
         </div>
 
-        <!-- Tarjetas financieras -->
-        <div class="row text-center mb-4">
+        <!-- Métricas -->
+        <div class="row text-center mb-4 g-3">
             <div class="col-md-4">
-                <div class="card p-3 shadow-sm border-success">
-                    <h6 class="text-muted">Total Cobrado (Mes)</h6>
-                    <h3 class="text-success">${{ total_cobrado }}</h3>
+                <div class="card-3d card-3d card-3d-cobrado">
+                    <h6 class="text-uppercase text-muted fs-7 fw-bold mb-1">Total Cobrado (Mes)</h6>
+                    <h3 class="text-success fw-bold m-0">${{ total_cobrado }}</h3>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card p-3 shadow-sm border-danger">
-                    <h6 class="text-muted">Total Gastos</h6>
-                    <h3 class="text-danger">${{ total_gastos }}</h3>
+                <div class="card-3d card-3d card-3d-gastos p-3">
+                    <h6 class="text-uppercase text-muted fs-7 fw-bold mb-1">Total Gastos</h6>
+                    <h3 class="text-danger fw-bold m-0">${{ total_gastos }}</h3>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card p-3 shadow-sm border-info">
-                    <h6 class="text-muted">Balance Neto</h6>
-                    <h3 class="text-info">${{ balance_neto }}</h3>
+                <div class="card-3d card-3d card-3d-balance p-3">
+                    <h6 class="text-uppercase text-muted fs-7 fw-bold mb-1">Balance Neto</h6>
+                    <h3 class="text-info fw-bold m-0">${{ balance_neto }}</h3>
                 </div>
             </div>
         </div>
 
-        <!-- Botones de Acciones Principales y Buscador -->
+        <!-- Botones de Acción y Buscador -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <form action="/panel" method="GET" class="d-flex gap-2 w-50">
-                <input type="text" name="q" class="form-control bg-dark text-light border-secondary form-control-sm" placeholder="Buscar por nombre, DNI o zona..." value="{{ busqueda }}">
-                <button type="submit" class="btn btn-outline-info btn-sm"><i class="fas fa-search"></i> Buscar</button>
+                <input type="text" name="q" class="form-control bg-dark text-light border-secondary form-control-sm" placeholder="Buscar cliente..." value="{{ busqueda }}">
+                <button type="submit" class="btn btn-outline-info btn-sm"><i class="fas fa-search"></i></button>
                 {% if busqueda %}
                 <a href="/panel" class="btn btn-outline-secondary btn-sm">Limpiar</a>
                 {% endif %}
             </form>
             <div class="d-flex gap-2">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCliente">
-                    <i class="fas fa-user-plus"></i> Nuevo Cliente
-                </button>
-                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modalGasto">
-                    <i class="fas fa-minus-circle"></i> Registrar Gasto
-                </button>
+                <button class="btn btn-success shadow" data-bs-toggle="modal" data-bs-target="#modalMasivo"><i class="fab fa-whatsapp me-1"></i> Envío Masivo</button>
+                <button class="btn btn-primary shadow" data-bs-toggle="modal" data-bs-target="#modalCliente"><i class="fas fa-user-plus me-1"></i> Nuevo Cliente</button>
+                <button class="btn btn-secondary shadow" data-bs-toggle="modal" data-bs-target="#modalGasto"><i class="fas fa-minus-circle me-1"></i> Gasto</button>
             </div>
         </div>
+    <!-- Tarjetas 3D de Monitoreo de Routers -->
+    <div class="row mb-4">
+    {% for router in routers %}
+    <div class="col-md-3">
+        <div class="card-3d p-3 text-white shadow-lg" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <h5><i class="fas fa-server text-info me-2"></i>{{ router.nombre }}</h5>
+            <p class="mb-1 text-muted">IP: {{ router.ip }}</p>
+            <span class="badge bg-success">Conectado</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+  
 
         <!-- Tabla de Clientes -->
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-dark text-light">
-                <h5 class="m-0"><i class="fas fa-users"></i> Mis Clientes Conectados</h5>
+            <div class="card-header bg-dark text-light border-bottom border-secondary py-3">
+                <h5 class="m-0 fw-bold"><i class="fas fa-users text-info me-2"></i> Mis Clientes Conectados y Monitoreo</h5>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0 align-middle">
-                        <thead class="table-dark">
+                        <thead class="table-dark text-uppercase fs-7">
                             <tr>
-                                <th>Cliente</th>
-                                <th>Usuario / Conexión</th>
+                                <th class="py-3 ps-3">Cliente / Ubicación</th>
+                                <th>Conexión / Identificador</th>
                                 <th>Plan / Precio</th>
-                                <th>Vencimiento</th>
-                                <th>Estado Pago</th>
+                                <th>Vencimiento / Estado</th>
                                 <th>Estado / Señal / Tráfico</th>
-                                <th class="text-center">Acciones</th>
+                                <th class="text-center pe-3">Acciones & Pagos</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for c in clientes %}
                             <tr class="{% if c.alerta_vencimiento %}alerta-vencimiento{% endif %}">
-                                <td>
+                                <td class="ps-3">
                                     <strong>{{ c.nombre }} {{ c.apellido }}</strong><br>
-                                    <small class="text-muted"><i class="fas fa-phone"></i> {{ c.telefono }}</small><br>
-                                    <small class="text-info"><i class="fas fa-map-marker-alt"></i> {{ c.zona or 'Sin zona' }} - {{ c.direccion or 'Sin dirección' }}</small>
-                                </td>
-                                <td><code>{{ c.usuario_pppoe }}</code></td>
-                                <td>{{ c.plan }}<br><strong>${{ c.precio }}</strong></td>
-                                <td>{{ c.vencimiento }} {% if c.alerta_vencimiento %}<span class="badge bg-danger ms-1">¡Vence pronto!</span>{% endif %}</td>
-                                <td>
-                                    <span class="badge {% if 'Pagado' in c.estado_pago %}bg-success{% else %}bg-warning text-dark{% endif %}">
-                                        {{ c.estado_pago }}
-                                    </span>
+                                    <small class="text-muted"><i class="fas fa-phone me-1"></i>{{ c.telefono }}</small><br>
+                                    <small class="text-secondary"><i class="fas fa-map-marker-alt me-1"></i>{{ c.direccion or 'Sin dirección' }} ({{ c.zona or 'Sin zona' }})</small>
                                 </td>
                                 <td>
-                                    <span class="badge {% if c.estado_conexion == 'Online' %}bg-success{% else %}bg-secondary{% endif %}">
-                                        {{ c.estado_conexion }}
-                                    </span><br>
+                                    <span class="badge bg-secondary mb-1">PPPoE</span><br>
+                                    <code>{{ c.usuario_pppoe }}</code>
+                                </td>
+                                <td>{{ c.plan or 'Plan Estándar' }}<br><strong>${{ c.precio }}</strong></td>
+                                <td>
+                                    {{ c.vencimiento }} {% if c.alerta_vencimiento %}<span class="badge bg-danger">Vence pronto</span>{% endif %}<br>
+                                    <span class="badge {% if 'Pagado' in c.estado_pago %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ c.estado_pago }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if c.estado_conexion == 'Online' %}bg-success{% else %}bg-secondary{% endif %}">{{ c.estado_conexion or 'Offline' }}</span><br>
                                     <small class="{% if c.potencia_senal and c.potencia_senal != 'N/A' and c.potencia_senal != 'Conectado' %}alerta-senal{% else %}text-info{% endif %}">
-                                        <i class="fas fa-signal"></i> {{ c.potencia_senal or 'N/D' }}
+                                        <i class="fas fa-signal"></i> Señal: {{ c.potencia_senal or 'Sin datos' }}
                                     </small><br>
-                                    <small class="text-warning"><i class="fas fa-database"></i> {{ c.consumo_datos or '0 MB' }}</small>
+                                    <small class="text-warning">
+                                        <i class="fas fa-database"></i> Tráfico: {{ c.consumo_datos or '0 MB' }}
+                                    </small>
+                                    {% if c.error_mikrotik %}
+                                    <br><small class="text-danger"><i class="fas fa-exclamation-triangle"></i> {{ c.error_mikrotik }}</small>
+                                    {% endif %}
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center pe-3">
                                     <div class="d-flex justify-content-center gap-1">
-                                        {% if 'Pagado' not in c.estado_pago %}
-                                        <a href="/registrar_pago/{{ c.id }}" class="btn btn-sm btn-success" title="Registrar Pago">
-                                            <i class="fas fa-check"></i>
-                                        </a>
-                                        {% endif %}
+                                        <a href="/registrar_pago/{{ c.id }}" class="btn btn-sm btn-success" title="Registrar Pago"><i class="fas fa-check-circle"></i></a>
                                         {% if c.telefono %}
-                                        <a href="https://wa.me/{{ c.telefono }}?text=Hola%20{{ c.nombre }},%20te%20escribimos%20de%20{{ revendedor.nombre_comercial | urlencode }}%20para%20recordarte%20tu%20vencimiento.%20Importe:%20${{ c.precio }}" 
-                                           target="_blank" class="btn btn-sm btn-outline-success" title="Enviar WhatsApp">
-                                            <i class="fab fa-whatsapp"></i>
-                                        </a>
+                                        <a href="https://wa.me/{{ c.telefono }}?text=Hola%20{{ c.nombre }},%20te%20escribimos%20de%20{{ revendedor.nombre_comercial | urlencode }}%20para%20recordarte%20el%20vencimiento%20de%20tu%20servicio.%20Importe:%20${{ c.precio }}" target="_blank" class="btn btn-sm btn-outline-success" title="Enviar WhatsApp"><i class="fab fa-whatsapp"></i></a>
                                         {% endif %}
-                                        <a href="/editar_cliente/{{ c.id }}" class="btn btn-sm btn-outline-primary" title="Editar Cliente">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="/cortar_servicio/{{ c.id }}" class="btn btn-sm btn-outline-danger" title="Cortar / Suspender Servicio">
-                                            <i class="fas fa-ban"></i>
-                                        </a>
+                                        <a href="/editar_cliente/{{ c.id }}" class="btn btn-sm btn-outline-primary" title="Editar Cliente"><i class="fas fa-edit"></i></a>
+                                        <a href="/cortar_servicio/{{ c.id }}" class="btn btn-sm btn-outline-danger" title="Cortar / Suspender Servicio"><i class="fas fa-ban"></i></a>
                                     </div>
                                 </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">No tenés clientes cargados todavía.</td>
+                                <td colspan="6" class="text-center py-4 text-muted">No hay clientes cargados.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -156,166 +184,80 @@
             </div>
         </div>
     </div>
-
-    <!-- Modal Configuración -->
+    <!-- Modal Configuración MikroTik -->
     <div class="modal fade" id="modalMikrotik" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form action="/guardar_configuracion" method="POST">
                     <div class="modal-header bg-warning text-dark">
-                        <h5 class="modal-title"><i class="fas fa-cog"></i> Configuración General y MikroTik</h5>
+                        <h5 class="modal-title"><i class="fas fa-cog me-2"></i> Configuración MikroTik y Marca</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body row g-3">
                         <div class="col-md-12">
-                            <label class="form-label">Nombre de tu Marca / Empresa</label>
+                            <label class="form-label">Nombre de tu Empresa / Marca</label>
                             <input type="text" class="form-control bg-dark text-light border-secondary" name="nombre_comercial" value="{{ revendedor.nombre_comercial or '' }}" required>
                         </div>
                         <div class="col-md-12">
                             <label class="form-label">IP del MikroTik</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="mikrotik_ip" value="{{ revendedor.mikrotik_ip or '' }}" placeholder="Ej: 192.168.88.1">
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="mikrotik_ip" value="{{ revendedor.mikrotik_ip or '' }}" placeholder="Ej: 192.168.88.1" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Usuario MikroTik</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="mikrotik_user" value="{{ revendedor.mikrotik_user or '' }}">
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="mikrotik_user" value="{{ revendedor.mikrotik_user or '' }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Contraseña MikroTik</label>
-                            <input type="password" class="form-control bg-dark text-light border-secondary" name="mikrotik_pass" value="{{ revendedor.mikrotik_pass or '' }}">
+                            <input type="password" class="form-control bg-dark text-light border-secondary" name="mikrotik_pass" value="{{ revendedor.mikrotik_pass or '' }}" required>
                         </div>
                     </div>
                     <div class="modal-footer border-secondary">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-warning">Guardar Cambios</button>
+                        <button type="submit" class="btn btn-warning">Guardar Configuración</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Modal Gestionar Planes -->
-    <div class="modal fade" id="modalPlan" tabindex="-1">
+    <!-- Modal Envío Masivo de WhatsApp -->
+    <div class="modal fade" id="modalMasivo" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="/agregar_plan" method="POST">
+                <form action="/envio_masivo" method="POST">
                     <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title"><i class="fas fa-tags"></i> Crear Nuevo Plan</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body row g-3">
-                        <div class="col-md-7">
-                            <label class="form-label">Nombre del Plan</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="nombre" required>
-                        </div>
-                        <div class="col-md-5">
-                            <label class="form-label">Precio ($)</label>
-                            <input type="number" step="0.01" class="form-control bg-dark text-light border-secondary" name="precio" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-secondary">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-success">Guardar Plan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Cambiar Contraseña -->
-    <div class="modal fade" id="modalPassword" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form action="/cambiar_password" method="POST">
-                    <div class="modal-header bg-secondary text-white">
-                        <h5 class="modal-title"><i class="fas fa-key"></i> Cambiar mi Contraseña</h5>
+                        <h5 class="modal-title"><i class="fab fa-whatsapp me-2"></i> Envío Masivo de WhatsApp</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body row g-3">
                         <div class="col-md-12">
-                            <label class="form-label">Nueva Contraseña</label>
-                            <input type="password" class="form-control bg-dark text-light border-secondary" name="nueva_password" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-secondary">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Actualizar Clave</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Nuevo Cliente -->
-    <div class="modal fade" id="modalCliente" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form action="/agregar_cliente" method="POST">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title"><i class="fas fa-user-plus"></i> Registrar Nuevo Cliente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Nombre</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="nombre" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Apellido</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="apellido" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">DNI</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="dni">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Teléfono</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="telefono" placeholder="Ej: 5491122334455">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Zona / Barrio</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="zona" placeholder="Ej: Centro...">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Dirección / Calle y Altura</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="direccion" placeholder="Ej: Av. San Martín 1234">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Usuario PPPoE</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="usuario_pppoe" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Contraseña PPPoE</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="password_pppoe" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Plan</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" name="plan" placeholder="Ej: 100 Megas" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Precio ($)</label>
-                            <input type="number" step="0.01" class="form-control bg-dark text-light border-secondary" name="precio" placeholder="Ej: 30000" required>
+                            <label class="form-label">Destinatarios:</label>
+                            <select name="tipo_envio" class="form-control bg-dark text-light border-secondary">
+                                <option value="pendientes">Solo pendientes / vencidos</option>
+                                <option value="todos">A todos los clientes</option>
+                            </select>
                         </div>
                         <div class="col-md-12">
-                            <label class="form-label">Fecha de Vencimiento</label>
-                            <input type="date" class="form-control bg-dark text-light border-secondary" name="vencimiento" required>
+                            <label class="form-label">Mensaje personalizado:</label>
+                            <textarea name="mensaje" class="form-control bg-dark text-light border-secondary" rows="4" required>Hola! Te escribimos de la administración para recordarte el pago de tu abono mensual de internet. ¡Muchas gracias!</textarea>
                         </div>
                     </div>
                     <div class="modal-footer border-secondary">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar Cliente</button>
+                        <button type="submit" class="btn btn-success">Generar Envíos Masivos</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Modal Nuevo Gasto -->
+    <!-- Modal Registrar Gasto -->
     <div class="modal fade" id="modalGasto" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form action="/agregar_gasto" method="POST">
                     <div class="modal-header bg-danger text-white">
-                        <h5 class="modal-title"><i class="fas fa-minus-circle"></i> Registrar Gasto</h5>
+                        <h5 class="modal-title"><i class="fas fa-minus-circle me-2"></i> Registrar Gasto</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body row g-3">
@@ -337,7 +279,96 @@
         </div>
     </div>
 
-    <!-- Script de Bootstrap -->
+    <!-- Modal Cambiar Contraseña -->
+    <div class="modal fade" id="modalPassword" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="/cambiar_password" method="POST">
+                    <div class="modal-header bg-secondary text-white">
+                        <h5 class="modal-title"><i class="fas fa-key me-2"></i> Cambiar mi Contraseña</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label">Nueva Contraseña</label>
+                        <input type="password" class="form-control bg-dark text-light border-secondary" name="nueva_password" required>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Actualizar Clave</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Cliente -->
+    <div class="modal fade" id="modalCliente" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content"> 
+                <form action="/agregar_cliente" method="POST">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i> Registrar Nuevo Cliente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="nombre" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Apellido</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="apellido" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="telefono" placeholder="Ej: 54911...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Zona</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="zona">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="direccion" placeholder="Calle y número">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Usuario PPPoE</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="usuario_pppoe" placeholder="Usuario" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contraseña PPPoE</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="password_pppoe" placeholder="Contraseña" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Plan</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" name="plan" placeholder="Ej: 50 Megas">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Precio / Monto ($)</label>
+                            <input type="number" step="0.01" class="form-control bg-dark text-light border-secondary" name="precio" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Vencimiento</label>
+                            <input type="date" class="form-control bg-dark text-light border-secondary" name="vencimiento" required>
+                        </div>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                <label class="form-label text-light">Asignar a MikroTik / Router</label>
+                <select name="router_id" class="form-control bg-dark text-light border-secondary" required>
+                    {% for r in routers %}
+                    <option value="{{ r.id }}">{{ r.nombre_router }} ({{ r.ip }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cliente</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

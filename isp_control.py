@@ -32,6 +32,14 @@ class Gasto(db.Model):
     fecha = db.Column(db.Date, default=datetime.utcnow)
     dueno_id = db.Column(db.Integer, db.ForeignKey('revendedor.id'), nullable=False)
 
+class RouterMikrotik(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombre_router = db.Column(db.String(100), nullable=False)
+    ip = db.Column(db.String(100), nullable=False)
+    usuario = db.Column(db.String(100), nullable=False)
+    password = db.Column(db.String(100), nullable=False)
+    dueno_id = db.Column(db.Integer, db.ForeignKey('revendedor.id'), nullable=False)
+
 class Cliente(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
@@ -50,6 +58,8 @@ class Cliente(db.Model):
     estado_conexion = db.Column(db.String(20), default='Desconectado')
     consumo_datos = db.Column(db.String(50), default='0 MB')
     dueno_id = db.Column(db.Integer, db.ForeignKey('revendedor.id'), nullable=False)
+    router_id = db.Column(db.Integer, db.ForeignKey('router_mikrotik.id'), nullable=True) # <-- CORREGIDO: Integrado dentro de la clase
+
 
 # --- INICIALIZACIÓN ---
 with app.app_context():
@@ -134,6 +144,7 @@ def panel():
     
     monitorear_mikrotik(revendedor)
     
+    routers = RouterMikrotik.query.filter_by(dueno_id=user_id).all()
     busqueda = request.args.get('q', '')
     if busqueda:
         filtro = f"%{busqueda}%"
@@ -154,8 +165,7 @@ def panel():
 
     total_cobrado = sum(float(c.precio) for c in clientes if c.estado_pago and 'Pagado' in c.estado_pago)
     total_gastos = sum(float(g.monto) for g in gastos)
-    
-    return render_template('clientes.html', clientes=clientes, planes=planes, gastos=gastos, revendedor=revendedor, total_cobrado=total_cobrado, total_gastos=total_gastos, balance_neto=total_cobrado - total_gastos, busqueda=busqueda)
+    return render_template('clientes.html', clientes=clientes, planes=planes, gastos=gastos, revendedor=revendedor, total_cobrado=total_cobrado, total_gastos=total_gastos, balance_neto=total_cobrado - total_gastos, busqueda=busqueda, routers=routers)
 
 @app.route('/sincronizar_mikrotik')
 def sincronizar_mikrotik():
@@ -176,30 +186,19 @@ def sincronizar_mikrotik():
             port=8728,
             timeout=5
         )
-        
-        # Traemos los secretos PPPoE cargados en el MikroTik
         secrets = list(connection(cmd='/ppp/secret/print'))
-        
         for secret in secrets:
             usuario_pppoe = secret.get('name')
             password_pppoe = secret.get('password', '')
-            
-            # Verificamos si ya existe en la base de datos para este revendedor
             existe = Cliente.query.filter_by(dueno_id=user_id, usuario_pppoe=usuario_pppoe).first()
             if not existe:
                 nuevo_cliente = Cliente(
-                    nombre="Importado",
-                    apellido="MikroTik",
-                    usuario_pppoe=usuario_pppoe,
-                    password_pppoe=password_pppoe,
-                    plan="Por definir",
-                    precio=0.0,
-                    vencimiento=date.today(),
-                    estado_pago='Pendiente',
-                    dueno_id=user_id
+                    nombre="Importado", apellido="MikroTik",
+                    usuario_pppoe=usuario_pppoe, password_pppoe=password_pppoe,
+                    plan="Por definir", precio=0.0, vencimiento=date.today(),
+                    estado_pago='Pendiente', dueno_id=user_id
                 )
                 db.session.add(nuevo_cliente)
-                
         db.session.commit()
         connection.close()
     except Exception as e:
@@ -207,17 +206,49 @@ def sincronizar_mikrotik():
 
     return redirect(url_for('panel'))
 
+@app.route('/envio_masivo', methods=['POST'])
+def envio_masivo():
+    if 'usuario_id' not in session: 
+        return redirect(url_for('login'))
+    
+    user_id = session['usuario_id']
+    tipo_envio = request.form.get('tipo_envio', 'todos')
+    mensaje_personalizado = request.form.get('mensaje', 'Hola, te escribimos desde la administración para recordarte el estado de tu servicio.')
+    
+    if tipo_envio == 'pendientes':
+        clientes = Cliente.query.filter_by(dueno_id=user_id).filter(Cliente.estado_pago != 'Pagado').all()
+    else:
+        clientes = Cliente.query.filter_by(dueno_id=user_id).all()
+        
+    return render_template('envio_masivo_resultado.html', clientes=clientes, mensaje=mensaje_personalizado)
+
 @app.route('/agregar_cliente', methods=['POST'])
 def agregar_cliente():
     if 'usuario_id' not in session: return redirect(url_for('login'))
+    
+    precio_val = request.form.get('precio')
+    precio_val = float(precio_val) if precio_val else 0.0
+    
+    venc_val = request.form.get('vencimiento')
+    if venc_val:
+        venc_date = datetime.strptime(venc_val, '%Y-%m-%d').date()
+    else:
+        venc_date = date.today()
+
     nuevo_cliente = Cliente(
-        nombre=request.form['nombre'], apellido=request.form['apellido'],
-        dni=request.form['dni'], telefono=request.form['telefono'],
-        zona=request.form.get('zona', ''), direccion=request.form.get('direccion', ''),
-        usuario_pppoe=request.form['usuario_pppoe'], password_pppoe=request.form['password_pppoe'],
-        plan=request.form['plan'], precio=float(request.form['precio']),
-        vencimiento=datetime.strptime(request.form['vencimiento'], '%Y-%m-%d').date(),
-        estado_pago='Pendiente', dueno_id=session['usuario_id']
+        nombre=request.form.get('nombre', ''),
+        apellido=request.form.get('apellido', ''),
+        dni=request.form.get('dni', ''),
+        telefono=request.form.get('telefono', ''),
+        zona=request.form.get('zona', ''),
+        direccion=request.form.get('direccion', ''),
+        usuario_pppoe=request.form.get('usuario_pppoe', ''),
+        password_pppoe=request.form.get('password_pppoe', ''),
+        plan=request.form.get('plan', 'General'),
+        precio=precio_val,
+        vencimiento=venc_date,
+        dueno_id=session.get('usuario_id'),
+        router_id=request.form.get('router_id'),
     )
     db.session.add(nuevo_cliente)
     db.session.commit()
@@ -238,9 +269,15 @@ def editar_cliente(id):
         cliente.zona = request.form.get('zona', '')
         cliente.direccion = request.form.get('direccion', '')
         cliente.usuario_pppoe = request.form['usuario_pppoe']
-        cliente.plan = request.form['plan']
-        cliente.precio = float(request.form['precio'])
-        cliente.vencimiento = datetime.strptime(request.form['vencimiento'], '%Y-%m-%d').date()
+        cliente.plan = request.form.get('plan', '')
+        
+        precio_val = request.form.get('precio')
+        cliente.precio = float(precio_val) if precio_val else 0.0
+        
+        venc_val = request.form.get('vencimiento')
+        if venc_val:
+            cliente.vencimiento = datetime.strptime(venc_val, '%Y-%m-%d').date()
+            
         db.session.commit()
         return redirect(url_for('panel'))
     
@@ -306,7 +343,12 @@ def super_admin():
 
 @app.route('/agregar_revendedor', methods=['POST'])
 def agregar_revendedor():
-    nuevo_rev = Revendedor(username=request.form['username'], password=request.form['password'], nombre_comercial=request.form['nombre_comercial'], estado_licencia='Activo')
+    nuevo_rev = Revendedor(
+        username=request.form['username'], 
+        password=request.form['password'], 
+        nombre_comercial=request.form.get('nombre_comercial', 'Nuevo ISP'), 
+        estado_licencia='Activo'
+    )
     db.session.add(nuevo_rev)
     db.session.commit()
     return redirect(url_for('super_admin'))
