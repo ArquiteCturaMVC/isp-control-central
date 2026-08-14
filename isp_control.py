@@ -323,5 +323,9 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+@app.route('/loader')
+def loader():
+    return render_template('loader.html')
+
 if __name__ == '__main__':
     app.run(debug=True)

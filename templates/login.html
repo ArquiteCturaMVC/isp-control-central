@@ -5,24 +5,101 @@
     <title>Acceso al Panel - ISP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #121212; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .login-card { width: 350px; padding: 20px; background-color: #1e1e1e; border: 1px solid #333; border-radius: 10px; }
+        body { 
+            background-color: #121212 !important; 
+            margin: 0 !important; 
+            height: 100vh !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            overflow: hidden !important;
+        }
+
+        /* ESCUDO TOTAL: Cubre toda la pantalla y tapa por completo el formulario de atrás */
+        #pantalla-carga {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background-color: #0f172a !important; /* Fondo sólido oscuro que bloquea la vista de atrás */
+            z-index: 999999999 !important; /* Prioridad máxima para estar por encima de todo */
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+        }
+
+        /* Contenedor flexible y amplio para la imagen */
+        .logo-contenedor {
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            margin-bottom: 0 !important;
+        }
+
+        /* Imagen en alta calidad adaptada al espacio */
+        .logo-contenedor img {
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 85vh !important;
+            object-fit: cover !important;
+            object-position: center !important;
+            border-radius: 15px !important;
+            display: block !important;
+        }
+
+        .login-card { 
+            width: 350px !important; 
+            padding: 20px !important; 
+            background-color: #1e1e1e !important; 
+            border: 1px solid #333 !important; 
+            border-radius: 10px !important; 
+        }
     </style>
 </head>
 <body>
+
+    <!-- PANTALLA DE CARGA: Tapa por completo el formulario de abajo -->
+    <div id="pantalla-carga">
+        <div class="logo-contenedor">
+            <img src="{{ url_for('static', filename='img/logo.jpeg') }}" alt="Logo">
+        </div>
+        <h2 style="color: white !important; font-size: 24px !important; font-family: sans-serif !important; margin-top: 15px !important;">Iniciando sistema...</h2>
+    </div>
+
+    <!-- CONTENIDO DEL LOGIN (QUEDA TOTALMENTE OCULTO HASTA QUE PASAN LOS 2 SEGUNDOS) -->
     <div class="login-card shadow">
         <h3 class="text-center mb-4">Iniciar Sesión</h3>
         <form method="POST">
             <div class="mb-3">
-                <label>Usuario</label>
+                <label class="form-label">Usuario</label>
                 <input type="text" name="username" class="form-control" required>
             </div>
             <div class="mb-3">
-                <label>Contraseña</label>
+                <label class="form-label">Contraseña</label>
                 <input type="password" name="password" class="form-control" required>
             </div>
             <button type="submit" class="btn btn-info w-100">Entrar</button>
         </form>
     </div>
+
+    <!-- SCRIPT DE TRANSICIÓN -->
+    <script>
+        setTimeout(function() {
+            const loader = document.getElementById('pantalla-carga');
+            if (loader) {
+                loader.style.transition = 'opacity 0.8s ease';
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.remove();
+                    document.body.style.overflow = 'auto';
+                }, 800);
+            }
+        }, 2000);
+    </script>
+
 </body>
 </html>
