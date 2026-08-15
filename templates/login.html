@@ -6,8 +6,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* 1. FONDO OSCURO INMEDIATO: Evita cualquier parpadeo blanco inicial */
         body { 
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important; 
+            background: #0f172a !important; 
             margin: 0 !important; 
             height: 100vh !important;
             display: flex !important;
@@ -15,6 +16,17 @@
             align-items: center !important;
             overflow: hidden !important;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        }
+
+        /* Oculta el contenido principal mientras carga para que no se vea el HTML crudo */
+        .login-wrapper {
+            opacity: 0;
+            transition: opacity 0.4s ease-in;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            max-width: 900px;
+            width: 90%;
         }
 
         /* ESCUDO TOTAL: Pantalla de carga inicial */
@@ -49,15 +61,6 @@
             object-position: center !important;
             border-radius: 15px !important;
             display: block !important;
-        }
-
-        /* Contenedor principal que une la tarjeta y el texto lateral/descriptivo */
-        .login-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 40px;
-            max-width: 900px;
-            width: 90%;
         }
 
         /* Texto de bienvenida al costado */
@@ -125,7 +128,7 @@
     </div>
 
     <!-- CONTENIDO DEL LOGIN -->
-    <div class="login-wrapper">
+    <div class="login-wrapper" id="loginWrapper">
         <div class="login-info">
             <div class="mb-3 text-info">
                 <i class="fas fa-network-wired fa-3x"></i>
@@ -161,6 +164,12 @@
 
     <!-- SCRIPT DE TRANSICIÓN -->
     <script>
+        // Hacemos visible el contenido del login apenas cargue el DOM
+        document.addEventListener("DOMContentLoaded", function() {
+            const wrapper = document.getElementById('loginWrapper');
+            if(wrapper) wrapper.style.opacity = '1';
+        });
+
         setTimeout(function() {
             const loader = document.getElementById('pantalla-carga');
             if (loader) {
