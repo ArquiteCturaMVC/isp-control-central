@@ -70,16 +70,61 @@
                             {% for rev in revendedores %}
                             <tr>
                                 <td class="ps-3">{{ rev.id }}</td>
-                                <td><strong>{{ rev.username }}</strong></td>
+                                <td>
+                                    <strong>{{ rev.username }}</strong>
+                                    {% if rev.nombre_comercial %}<br><small class="text-muted">{{ rev.nombre_comercial }}</small>{% endif %}
+                                </td>
                                 <td>
                                     <span class="badge {% if rev.estado_licencia == 'Activo' %}bg-success{% else %}bg-danger{% endif %}">
                                         {{ rev.estado_licencia }}
                                     </span>
                                 </td>
                                 <td class="text-center pe-3">
-                                    <a href="/suspender_revendedor/{{ rev.id }}" class="btn btn-sm {% if rev.estado_licencia == 'Activo' %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
-                                        {% if rev.estado_licencia == 'Activo' %}Suspender Licencia{% else %}Activar Licencia{% endif %}
-                                    </a>
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <!-- Botón Suspender / Activar -->
+                                        <a href="/suspender_revendedor/{{ rev.id }}" class="btn btn-sm {% if rev.estado_licencia == 'Activo' %}btn-outline-warning{% else %}btn-outline-success{% endif %}" title="Cambiar Estado">
+                                            <i class="fas fa-power-off"></i>
+                                        </a>
+
+                                        <!-- Botón Editar -->
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditar{{ rev.id }}" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+
+                                        <!-- Botón Eliminar -->
+                                        <a href="/eliminar_revendedor/{{ rev.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Estás seguro de eliminar este revendedor y todos sus datos?');" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+
+                                    <!-- Modal Editar Revendedor -->
+                                    <div class="modal fade text-start" id="modalEditar{{ rev.id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form action="/editar_revendedor/{{ rev.id }}" method="POST">
+                                                    <div class="modal-header bg-primary text-white">
+                                                        <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Editar Revendedor: {{ rev.username }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body row g-3">
+                                                        <div class="col-md-12">
+                                                            <label class="form-label">Nombre de Usuario / Empresa</label>
+                                                            <input type="text" class="form-control bg-dark text-light border-secondary" name="username" value="{{ rev.username }}" required>
+                                                        </div>
+                                                        <div class="col-md-12">
+                                                            <label class="form-label">Nombre Comercial</label>
+                                                            <input type="text" class="form-control bg-dark text-light border-secondary" name="nombre_comercial" value="{{ rev.nombre_comercial }}">
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer border-secondary">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </td>
                             </tr>
                             {% else %}

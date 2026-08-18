@@ -139,25 +139,16 @@ def login():
         else:
             error = "Usuario o contraseña incorrectos."
     return render_template('login.html', error=error)
+
 @app.route('/panel')
 def panel():
-    if 'usuario_id' not in session: return redirect(url_for('login'))
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
     user_id = session['usuario_id']
     revendedor = Revendedor.query.get(user_id)
-    
     monitorear_mikrotik(revendedor)
-    
     routers = RouterMikrotik.query.filter_by(dueno_id=user_id).all()
-    busqueda = request.args.get('q', '')
-    if busqueda:
-        filtro = f"%{busqueda}%"
-        clientes = Cliente.query.filter(
-            Cliente.dueno_id == user_id,
-            (Cliente.nombre.ilike(filtro)) | (Cliente.apellido.ilike(filtro)) | (Cliente.dni.ilike(filtro)) | (Cliente.zona.ilike(filtro))
-        ).all()
-    else:
-        clientes = Cliente.query.filter_by(dueno_id=user_id).all()
-
+    clientes = Cliente.query.filter_by(dueno_id=user_id).all()
     planes = Plan.query.filter_by(dueno_id=user_id).all()
     gastos = Gasto.query.filter_by(dueno_id=user_id).all()
 
@@ -166,9 +157,10 @@ def panel():
     for c in clientes:
         c.alerta_vencimiento = True if (c.estado_pago != 'Pagado' and c.vencimiento and c.vencimiento <= tres_dias_despues) else False
 
-    total_cobrado = sum(float(c.precio) for c in clientes if c.estado_pago and 'Pagado' in c.estado_pago)
+    total_cobrado = sum(float(c.precio) for c in clientes if c.estado_pago and 'Pagado' in str(c.estado_pago) and c.precio)
     total_gastos = sum(float(g.monto) for g in gastos)
-    return render_template('clientes.html', clientes=clientes, planes=planes, gastos=gastos, revendedor=revendedor, total_cobrado=total_cobrado, total_gastos=total_gastos, balance_neto=total_cobrado - total_gastos, busqueda=busqueda, routers=routers)
+    balance_neto = total_cobrado -total_gastos
+    return render_template('clientes.html', clientes=clientes, planes=planes, gastos=gastos, routers=routers, total_cobrado=total_cobrado, total_gastos=total_gastos, revendedor=revendedor, balance_neto=balance_neto)
 
 @app.route('/sincronizar_mikrotik')
 def sincronizar_mikrotik():
@@ -179,6 +171,9 @@ def sincronizar_mikrotik():
     revendedor = Revendedor.query.get(user_id)
     
     if not revendedor.mikrotik_ip or not revendedor.mikrotik_user:
+       if revendedor.username == 'gestionadmin':
+        return redirect(url_for('super_admin'))
+    else:
         return redirect(url_for('panel'))
 
     try:
@@ -339,7 +334,7 @@ def guardar_configuracion():
     db.session.commit()
     return redirect(url_for('panel'))
 
-@app.route('/super-admin')
+@app.route('/super_admin')
 def super_admin():
     if 'usuario_id' not in session:
          return redirect(url_for('login'))
@@ -362,6 +357,21 @@ def agregar_revendedor():
 def suspender_revendedor(id):
     rev = Revendedor.query.get(id)
     rev.estado_licencia = 'Suspendido' if rev.estado_licencia == 'Activo' else 'Activo'
+    db.session.commit()
+    return redirect(url_for('super_admin'))
+
+@app.route('/editar_revendedor/<int:id>', methods=['POST'])
+def editar_revendedor(id):
+    rev = Revendedor.query.get_or_404(id)
+    rev.username = request.form.get('username')
+    rev.nombre_comercial = request.form.get('nombre_comercial')
+    db.session.commit()
+    return redirect(url_for('super_admin'))
+
+@app.route('/eliminar_revendedor/<int:id>')
+def eliminar_revendedor(id):
+    rev = Revendedor.query.get_or_404(id)
+    db.session.delete(rev)
     db.session.commit()
     return redirect(url_for('super_admin'))
 
