@@ -4,7 +4,7 @@ from datetime import datetime, date, timedelta
 import librouteros
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://neondb_owner:npg_u2rVz0sYPWeo@ep-long-dew-ayod0a9m.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.secret_key = 'mundonet_secret_key'
 db = SQLAlchemy(app)
 
